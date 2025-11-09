@@ -2,6 +2,9 @@ package com.dijitalkuaforum.dijitalkuaforum_backend.controller;
 
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.LoginRequestDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.SecuredCustomerRequestDTO;
+import com.dijitalkuaforum.dijitalkuaforum_backend.exception.DuplicateValueException;
+import com.dijitalkuaforum.dijitalkuaforum_backend.exception.ResourceNotFoundException;
+import com.dijitalkuaforum.dijitalkuaforum_backend.exception.UnauthorizedException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.Barber;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.Customer;
 import com.dijitalkuaforum.dijitalkuaforum_backend.service.AuthService;
@@ -37,7 +40,11 @@ public class CustomerController {
     public ResponseEntity<?> createCustomer(@RequestBody SecuredCustomerRequestDTO request) {
         // Güvenlik Kontrolü: Her istekte kullanıcı adı/şifreyi kontrol et
         if (checkAuthentication(request.getUsername(), request.getPassword()).isEmpty()) {
-            return new ResponseEntity<>("Yetkisiz Erişim: Geçerli kullanıcı adı ve şifre gereklidir.", HttpStatus.UNAUTHORIZED);
+            throw new UnauthorizedException();
+        }
+
+        if(customerService.validateEmailIsUnique(request.getCustomer().getEmail())){
+            throw new DuplicateValueException(request.getCustomer().getEmail(), "e-mail");
         }
 
         // Güvenlik başarılı, Müşteri işlemini yap
@@ -54,7 +61,7 @@ public class CustomerController {
 
         // Güvenlik Kontrolü
         if (checkAuthentication(username, password).isEmpty()) {
-            return new ResponseEntity<>("Yetkisiz Erişim: Geçerli kullanıcı adı ve şifre gereklidir.", HttpStatus.UNAUTHORIZED);
+            throw new UnauthorizedException();
         }
 
         // Güvenlik başarılı
@@ -72,12 +79,12 @@ public class CustomerController {
 
         // Güvenlik Kontrolü
         if (checkAuthentication(username, password).isEmpty()) {
-            return new ResponseEntity<>("Yetkisiz Erişim: Geçerli kullanıcı adı ve şifre gereklidir.", HttpStatus.UNAUTHORIZED);
+            throw new UnauthorizedException();
         }
 
         // Güvenlik başarılı, silme işlemini yap
         if (customerService.findById(id).isEmpty()) {
-            return new ResponseEntity<>("Müşteri bulunamadı.", HttpStatus.NOT_FOUND);
+            throw new ResourceNotFoundException("musteri","id",id);
         }
         customerService.deleteById(id);
         return ResponseEntity.ok("Müşteri başarıyla silindi.");

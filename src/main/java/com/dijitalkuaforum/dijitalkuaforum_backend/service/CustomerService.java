@@ -1,5 +1,6 @@
 package com.dijitalkuaforum.dijitalkuaforum_backend.service;
 
+import com.dijitalkuaforum.dijitalkuaforum_backend.exception.DuplicateValueException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.Customer;
 import com.dijitalkuaforum.dijitalkuaforum_backend.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,9 @@ public class CustomerService {
 
     public void deleteById(Long id) {
         customerRepository.deleteById(id);
+    }
+
+    public boolean validateEmailIsUnique(String email) {
+        return customerRepository.existsByEmail(email);
     }
 }
