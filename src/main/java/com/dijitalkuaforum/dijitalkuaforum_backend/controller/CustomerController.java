@@ -1,6 +1,7 @@
 package com.dijitalkuaforum.dijitalkuaforum_backend.controller;
 
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.LoginRequestDTO;
+import com.dijitalkuaforum.dijitalkuaforum_backend.dto.ResponseRequestDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.SecuredCustomerRequestDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.DuplicateValueException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.ResourceNotFoundException;
@@ -43,7 +44,7 @@ public class CustomerController {
             throw new UnauthorizedException();
         }
 
-        if(customerService.validateEmailIsUnique(request.getCustomer().getEmail())){
+        if (customerService.validateEmailIsUnique(request.getCustomer().getEmail())) {
             throw new DuplicateValueException(request.getCustomer().getEmail(), "e-mail");
         }
 
@@ -52,12 +53,26 @@ public class CustomerController {
         return ResponseEntity.ok(savedCustomer);
     }
 
+    @PutMapping("/updateCustomer/{id}")
+    public ResponseEntity<?> putCustomer(@RequestHeader("Username") String username,
+                                         @RequestHeader("Password") String password,
+                                         @PathVariable Long id,
+                                         @RequestBody Customer updatedCustomer) {
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
+
+        Customer resultCustomer = customerService.updateCustomer(id, updatedCustomer);
+
+        return ResponseEntity.ok("Musterimiz guncellendi" + resultCustomer);
+    }
+
     // --- 2. READ ALL (Tümünü Listeleme) ---
     // GET istekleri body alamaz, bu yüzden güvenlik bilgilerini HTTP başlıklarından almalıyız.
     @GetMapping("/getAllCustomers")
     public ResponseEntity<?> getAllCustomers(
-            @RequestHeader("X-Username") String username,
-            @RequestHeader("X-Password") String password) {
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password) {
 
         // Güvenlik Kontrolü
         if (checkAuthentication(username, password).isEmpty()) {
@@ -74,8 +89,8 @@ public class CustomerController {
     @DeleteMapping("/deleteCustomer/{id}")
     public ResponseEntity<?> deleteCustomer(
             @PathVariable Long id,
-            @RequestHeader("X-Username") String username,
-            @RequestHeader("X-Password") String password) {
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password) {
 
         // Güvenlik Kontrolü
         if (checkAuthentication(username, password).isEmpty()) {
@@ -84,10 +99,12 @@ public class CustomerController {
 
         // Güvenlik başarılı, silme işlemini yap
         if (customerService.findById(id).isEmpty()) {
-            throw new ResourceNotFoundException("musteri","id",id);
+            throw new ResourceNotFoundException("musteri", "id", id);
         }
+
+        Customer customer = customerService.findById(id).get();
         customerService.deleteById(id);
-        return ResponseEntity.ok("Müşteri başarıyla silindi.");
+        return ResponseEntity.ok("Müşterimiz " + customer.getName() + " " + customer.getLastName() + " sistemden başarıyla silindi.");
     }
 
     // PUT (Güncelleme) metodu da CREATE metodu gibi body içinde username/password alarak kolayca yapılabilir.
