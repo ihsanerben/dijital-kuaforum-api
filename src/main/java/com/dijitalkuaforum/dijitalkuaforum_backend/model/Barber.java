@@ -3,12 +3,12 @@ package com.dijitalkuaforum.dijitalkuaforum_backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-// Lombok notasyonları ile getter, setter, yapıcı metotlar otomatik üretilir.
+
 @Entity
-@Data // Getter, Setter, toString, equals, hashCode sağlar
-@NoArgsConstructor // Parametresiz yapıcı metot
-@AllArgsConstructor // Tüm alanları içeren yapıcı metot
-@Table(name = "barbers") // Veritabanındaki tablo adı
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "barbers")
 public class Barber {
 
     @Id

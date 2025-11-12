@@ -30,8 +30,7 @@ public class CustomerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: ", "id", id));
 
         // 2. Müşteri nesnesindeki alanları yeni detaylarla güncelle
-        customer.setName(customerDetails.getName());
-        customer.setLastName(customerDetails.getLastName());
+        customer.setFullName(customerDetails.getFullName());
         customer.setEmail(customerDetails.getEmail());
         customer.setPhoneNumber(customerDetails.getPhoneNumber());
 

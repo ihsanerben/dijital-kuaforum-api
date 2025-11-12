@@ -32,19 +32,19 @@ public class AuthController {
         Optional<Barber> optionalBarber = authService.login(loginRequest);
 
         if (optionalBarber.isPresent()) {
+
             // Login başarılı
-            // Güvenlik için şifre alanı null'a çekilebilir veya şifresiz bir DTO döndürülebilir.
+
             Barber loggedInBarber = optionalBarber.get();
 
             ResponseRequestDTO responseRequestDTO = new ResponseRequestDTO();
-
             responseRequestDTO.setId(loggedInBarber.getId());
             responseRequestDTO.setUsername(loggedInBarber.getUsername());
+            responseRequestDTO.setMessage("Kullanici sisteme basariyla girdi.");
 
 
-            return new ResponseEntity<>("Kullanici giris yapti: " + responseRequestDTO, HttpStatus.OK); // 200 OK
+            return new ResponseEntity<>(responseRequestDTO, HttpStatus.OK); // 200 OK
         } else {
-            // Login başarısız
             return new ResponseEntity<>("Kullanıcı adı veya şifre hatalı.", HttpStatus.UNAUTHORIZED); // 401 Unauthorized
         }
     }
