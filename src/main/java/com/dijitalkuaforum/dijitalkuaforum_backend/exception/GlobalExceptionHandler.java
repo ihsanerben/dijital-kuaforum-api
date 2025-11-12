@@ -11,22 +11,14 @@ public class GlobalExceptionHandler {
     // Genel Hata: 500 Internal Server Error döndürür (Tüm beklenmeyen hatalar için)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
-        return new ResponseEntity<>(
-                new ErrorResponse(
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Beklenmedik bir sunucu hatası oluştu. Lütfen sistem yöneticisi ile iletişime geçin."
-                ),
-                HttpStatus.INTERNAL_SERVER_ERROR
+        return new ResponseEntity<>(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Beklenmedik bir sunucu hatası oluştu. Lütfen sistem yöneticisi ile iletişime geçin."), HttpStatus.INTERNAL_SERVER_ERROR
         );
     }
 
     // Özel Hata: 404 Not Found döndürür
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        return new ResponseEntity<>(
-                new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage()),
-                HttpStatus.NOT_FOUND
-        );
+        return new ResponseEntity<>(new ErrorResponse(HttpStatus.NOT_FOUND.value(), ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
     // Yeni Hata: 409 Conflict döndürür
@@ -34,9 +26,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDuplicateValueException(DuplicateValueException ex) {
         // İstemciye 409 Conflict HTTP durum kodu döndürür
         return new ResponseEntity<>(
-                new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage()),
-                HttpStatus.CONFLICT
-        );
+                new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(UnauthorizedException.class)

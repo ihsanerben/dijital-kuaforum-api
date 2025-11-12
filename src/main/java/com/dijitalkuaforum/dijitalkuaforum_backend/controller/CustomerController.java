@@ -104,7 +104,7 @@ public class CustomerController {
 
         Customer customer = customerService.findById(id).get();
         customerService.deleteById(id);
-        return ResponseEntity.ok("Müşterimiz " + customer.getName() + " " + customer.getLastName() + " sistemden başarıyla silindi.");
+        return ResponseEntity.ok("Müşterimiz " + customer.getFullName() + " sistemden başarıyla silindi.");
     }
 
     // PUT (Güncelleme) metodu da CREATE metodu gibi body içinde username/password alarak kolayca yapılabilir.

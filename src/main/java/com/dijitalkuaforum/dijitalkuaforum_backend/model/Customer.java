@@ -14,10 +14,7 @@ public class Customer {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
-    private String lastName;
+    private String fullName;
 
     @Column(nullable = false)
     private String phoneNumber;
