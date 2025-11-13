@@ -28,6 +28,7 @@ public interface RandevuRepository extends JpaRepository<Randevu, Long> {
             @Param("excludedStatus") String excludedStatus
     );
 
-    // Takvim görünümü için (belirli bir tarih aralığındaki tüm randevular)
-    List<Randevu> findByStartTimeBetween(LocalDateTime startOfDay, LocalDateTime endOfDay);
+    List<Randevu> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    List<Randevu> findByStartTimeBetweenAndBarberId(LocalDateTime start, LocalDateTime end, Long barberId);
 }

@@ -8,10 +8,12 @@ import com.dijitalkuaforum.dijitalkuaforum_backend.service.CustomerService; // M
 import com.dijitalkuaforum.dijitalkuaforum_backend.service.RandevuServis;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.UnauthorizedException; // Yetkilendirme için
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +24,23 @@ public class RandevuController {
 
     private final RandevuServis randevuServis;
     private final CustomerService customerService; // Customer nesnesini bulmak için
+
+
+    // --- TAKVİM GÖRÜNÜMÜ VE KONTROLÜ (TEK VE TEMİZ METOT) ---
+    // Bu metot /api/randevular/takvim rotasını yönetir.
+    // GET /api/randevular/takvim?tarih=YYYY-MM-DD&barberId=X
+    @GetMapping("/takvim")
+    public ResponseEntity<List<Randevu>> getRandevularByDate(
+            @RequestParam("tarih") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tarih, // Tarih zorunlu
+            @RequestParam(required = false) Long barberId // Kuaför ID'si isteğe bağlı
+    ) {
+        // RandevuServis'ten o gün/hafta için onaylanmış/beklemedeki randevuları çek
+        // RandevuServis'te bu metodu oluşturmamız gerekecek.
+        List<Randevu> randevular = randevuServis.getRandevularByDate(tarih, barberId);
+
+        return ResponseEntity.ok(randevular);
+    }
+
 
     // --- 1. MÜŞTERİ İŞLEMLERİ ---
 
@@ -43,27 +62,6 @@ public class RandevuController {
         return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
     }
 
-    // --- 2. TAKVİM GÖRÜNÜMÜ VE KONTROLÜ (Aşama 3'e hazırlık) ---
-
-    // Müsait Saatleri Görüntüleme (Müşteri Takvimi)
-    // Bu endpoint, bir gün veya hafta için müsait 5 dakikalık dilimleri döndürür.
-    // Şimdilik sadece randevuları getirip Frontend'in işlemesini sağlıyoruz.
-    // GET /api/randevular/takvim?tarih=YYYY-MM-DD
-    @GetMapping("/takvim")
-    public ResponseEntity<List<Randevu>> randevulariGetir(
-            @RequestParam(required = false) String tarih,
-            @RequestParam(required = false) Long barberId // İleride kuaföre özel takvim için
-    ) {
-        // İleride bu metod, takvim görünümünün ana verisini sağlayacaktır.
-        // RandevuServis'ten o gün/hafta için onaylanmış/beklemedeki randevuları çekip döndürmeliyiz.
-        // Şimdilik tüm randevuları getiriyoruz:
-        List<Randevu> randevular = randevuServis.tumRandevulariGetir();
-
-        // Gerçek implementasyonda: 
-        // randevuServis.getRandevularByDateAndBarber(tarih, barberId); gibi bir metot kullanılacak.
-
-        return ResponseEntity.ok(randevular);
-    }
 
     // --- 3. ADMİN İŞLEMLERİ (Admin yetkilendirmesi gereklidir) ---
 

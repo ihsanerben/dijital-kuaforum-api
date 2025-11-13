@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,6 +31,28 @@ public class RandevuServis {
     // Kuaförün çalışma saatlerini varsayıyoruz (Daha basit bir sistem için)
     private static final int IS_BASLANGIC_SAATI = 9; // 09:00
     private static final int IS_BITIS_SAATI = 18;   // 18:00
+
+    // YENİ METOT: Belirli bir tarih için randevuları çekme
+    public List<Randevu> getRandevularByDate(LocalDate date) {
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
+
+        // RandevuRepository'de randevuları başlangıç zamanına göre çekme metodu tanımlanmalı
+        return randevuRepository.findByStartTimeBetween(startOfDay, endOfDay);
+
+        // NOT: Gerçek projede, sadece "ONAYLANDI" veya "BEKLEYEN" randevular çekilmelidir.
+    }
+
+    public List<Randevu> getRandevularByDate(LocalDate date, Long barberId) {
+        // Başlangıç ve bitiş saatlerini hesapla
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.atStartOfDay().plusDays(1).minusNanos(1); // Gün sonu
+
+        // Bu sorguyu RandevuRepository'ye eklememiz gerekebilir (aşağıda)
+        return randevuRepository.findByStartTimeBetweenAndBarberId(startOfDay, endOfDay, barberId);
+
+        // NOT: Gerçek projede, sadece "ONAYLANDI" veya "BEKLEYEN" randevular çekilmelidir.
+    }
 
     // --- RANDUVU OLUŞTURMA İŞLEMİ (Müşteri/Admin) ---
     @Transactional
