@@ -1,6 +1,7 @@
+// src/main/java/.../service/CustomerService.java (GÜNCELLENMİŞ)
+
 package com.dijitalkuaforum.dijitalkuaforum_backend.service;
 
-import com.dijitalkuaforum.dijitalkuaforum_backend.exception.DuplicateValueException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.ResourceNotFoundException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.Customer;
 import com.dijitalkuaforum.dijitalkuaforum_backend.repository.CustomerRepository;
@@ -24,6 +25,11 @@ public class CustomerService {
         return customerRepository.findById(id);
     }
 
+    // YENİ METOT: Telefon numarasına göre müşteri bulma (Auth Controller için)
+    public Optional<Customer> findByPhoneNumber(String phoneNumber) {
+        return customerRepository.findByPhoneNumber(phoneNumber);
+    }
+
     public Customer updateCustomer(Long id, Customer customerDetails) {
         // 1. Müşterinin var olup olmadığını kontrol et
         Customer customer = customerRepository.findById(id)
@@ -33,6 +39,13 @@ public class CustomerService {
         customer.setFullName(customerDetails.getFullName());
         customer.setEmail(customerDetails.getEmail());
         customer.setPhoneNumber(customerDetails.getPhoneNumber());
+
+        // GÜVENLİK KONTROLÜ: Admin, müşteriyi güncellerken şifre alanını boş gönderebilir.
+        // Bu durumda mevcut şifresini KORUMALIYIZ.
+        // Eğer customerDetails objesi bir şifre içeriyorsa (null/boş değilse), o zaman güncelleme yapılır.
+        if (customerDetails.getPassword() != null && !customerDetails.getPassword().isEmpty()) {
+            customer.setPassword(customerDetails.getPassword());
+        }
 
         // 3. Güncellenmiş nesneyi veritabanına kaydet (SAVE metodu hem insert hem update yapar)
         final Customer updatedCustomer = customerRepository.save(customer);
