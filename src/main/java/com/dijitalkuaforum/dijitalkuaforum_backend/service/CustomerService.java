@@ -25,6 +25,12 @@ public class CustomerService {
         return customerRepository.findById(id);
     }
 
+    // YENİ METOT: ID ile Müşteri Nesnesini Getirir (Controller için)
+    public Customer idIleMusteriGetir(Long id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer", "id", id));
+    }
+
     // YENİ METOT: Telefon numarasına göre müşteri bulma (Auth Controller için)
     public Optional<Customer> findByPhoneNumber(String phoneNumber) {
         return customerRepository.findByPhoneNumber(phoneNumber);

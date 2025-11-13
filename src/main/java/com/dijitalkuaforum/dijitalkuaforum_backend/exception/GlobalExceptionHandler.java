@@ -37,4 +37,18 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED
         );
     }
+
+    // 409 Conflict (Çakışma) hatalarını yakalar
+    @ExceptionHandler(AppointmentConflictException.class)
+    public ResponseEntity<String> handleAppointmentConflictException(AppointmentConflictException ex) {
+        // Özellikle 409 dönmesi için (Eğer @ResponseStatus doğru çalışmazsa)
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    // GlobalExceptionHandler.java'dan gelen kod
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
 }
