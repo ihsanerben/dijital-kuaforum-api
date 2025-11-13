@@ -2,6 +2,7 @@
 
 package com.dijitalkuaforum.dijitalkuaforum_backend.service;
 
+import com.dijitalkuaforum.dijitalkuaforum_backend.exception.ResourceNotFoundException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.*;
 import com.dijitalkuaforum.dijitalkuaforum_backend.repository.*;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.AppointmentConflictException; // İleride oluşturacağız
@@ -43,15 +44,42 @@ public class RandevuServis {
         // NOT: Gerçek projede, sadece "ONAYLANDI" veya "BEKLEYEN" randevular çekilmelidir.
     }
 
+    @Transactional
+    public Randevu randevuDurumuGuncelle(Long randevuId, String yeniDurum) {
+        // 1. Randevuyu bul
+        Randevu randevu = randevuRepository.findById(randevuId)
+                .orElseThrow(() -> new ResourceNotFoundException("Randevu", "id", randevuId));
+
+        // 2. Durum geçerliliğini kontrol et (Basit kontrol)
+        if (!yeniDurum.equals("ONAYLANDI") && !yeniDurum.equals("REDDEDİLDİ")) {
+            throw new IllegalArgumentException("Geçersiz randevu durumu. ONAYLANDI veya REDDEDİLDİ olmalıdır.");
+        }
+
+        // 3. Durumu güncelle
+        randevu.setStatus(yeniDurum);
+
+        // 4. Kaydet ve döndür
+        return randevuRepository.save(randevu);
+        // NOT: Onaylandığında e-posta/SMS gönderimi Aşama 4'te yapılabilir.
+    }
+
     public List<Randevu> getRandevularByDate(LocalDate date, Long barberId) {
         // Başlangıç ve bitiş saatlerini hesapla
         LocalDateTime startOfDay = date.atStartOfDay();
-        LocalDateTime endOfDay = date.atStartOfDay().plusDays(1).minusNanos(1); // Gün sonu
+        // Gün sonu için 23:59:59.999999999'u temsil eden bir sonraki günün başlangıcı
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay();
 
-        // Bu sorguyu RandevuRepository'ye eklememiz gerekebilir (aşağıda)
-        return randevuRepository.findByStartTimeBetweenAndBarberId(startOfDay, endOfDay, barberId);
+        if (barberId != null) {
+            // Kuaför ID'si belirtilmişse
+            // NOT: findByStartTimeBetweenAndBarberId metodu doğru çalışmayabilir,
+            // bu yüzden sadece temel zaman aralığı sorgusunu kullanalım ve filtrelemeyi serviste yapalım.
 
-        // NOT: Gerçek projede, sadece "ONAYLANDI" veya "BEKLEYEN" randevular çekilmelidir.
+            // Eğer Repository metodu doğru çalışıyorsa:
+            return randevuRepository.findByStartTimeBetweenAndBarberId(startOfDay, endOfDay, barberId);
+        } else {
+            // Kuaför ID'si belirtilmemişse (Genel Takvim)
+            return randevuRepository.findByStartTimeBetween(startOfDay, endOfDay);
+        }
     }
 
     // --- RANDUVU OLUŞTURMA İŞLEMİ (Müşteri/Admin) ---

@@ -2,8 +2,10 @@
 
 package com.dijitalkuaforum.dijitalkuaforum_backend.controller;
 
+import com.dijitalkuaforum.dijitalkuaforum_backend.dto.LoginRequestDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.*;
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.RandevuTalepDTO;
+import com.dijitalkuaforum.dijitalkuaforum_backend.service.AuthService;
 import com.dijitalkuaforum.dijitalkuaforum_backend.service.CustomerService; // Müşteri bilgisini çekmek için
 import com.dijitalkuaforum.dijitalkuaforum_backend.service.RandevuServis;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.UnauthorizedException; // Yetkilendirme için
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/randevular")
@@ -23,7 +26,19 @@ import java.util.List;
 public class RandevuController {
 
     private final RandevuServis randevuServis;
+    private final AuthService authService;
     private final CustomerService customerService; // Customer nesnesini bulmak için
+
+    // Admin Kontrol Mekanizması (CustomerController'dan aldığınız benzer yapı)
+    private Optional<Barber> checkAuthentication(String username, String password) {
+        if (username == null || password == null) {
+            return Optional.empty();
+        }
+        LoginRequestDTO loginRequest = new LoginRequestDTO();
+        loginRequest.setUsername(username);
+        loginRequest.setPassword(password);
+        return authService.login(loginRequest);
+    }
 
 
     // --- TAKVİM GÖRÜNÜMÜ VE KONTROLÜ (TEK VE TEMİZ METOT) ---
@@ -74,16 +89,13 @@ public class RandevuController {
             @PathVariable Long id,
             @RequestParam String yeniDurum)
     {
-        // Yetkilendirme (AuthService'e ihtiyaç duyar, şimdilik atlanmıştır)
-        // if (authService.checkAdmin(username, password).isEmpty()) {
-        //     throw new UnauthorizedException();
-        // }
+        // Yetkilendirme Kontrolü
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
 
-        // RandevuServis'te bu metotun implementasyonu gereklidir.
-        // Randevu guncellenmisRandevu = randevuServis.randevuDurumuGuncelle(id, yeniDurum);
-        // return ResponseEntity.ok(guncellenmisRandevu);
-
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        Randevu guncellenmisRandevu = randevuServis.randevuDurumuGuncelle(id, yeniDurum);
+        return ResponseEntity.ok(guncellenmisRandevu);
     }
 
     // Tüm Randevuları Getirme (Admin Paneli İçin Detaylı Liste)

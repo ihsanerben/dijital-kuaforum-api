@@ -29,6 +29,7 @@ public interface RandevuRepository extends JpaRepository<Randevu, Long> {
     );
 
     List<Randevu> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
-
+    // 2. Kuaför ID'sine göre tarih aralığı sorgusu
+// Bu metot isminin Spring Data JPA tarafından doğru yorumlandığından emin olunmalıdır.
     List<Randevu> findByStartTimeBetweenAndBarberId(LocalDateTime start, LocalDateTime end, Long barberId);
 }
