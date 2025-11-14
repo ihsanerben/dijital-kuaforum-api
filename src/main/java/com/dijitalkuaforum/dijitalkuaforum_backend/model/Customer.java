@@ -17,7 +17,7 @@ public class Customer {
     private String fullName;
 
     // Telefon numarası zorunlu kalır, ancak artık UNIQUE DEĞİL (Admin/Kullanıcı kaydı için)
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String phoneNumber;
 
     // E-posta alanı artık zorunlu DEĞİL (Admin hızlı kaydı için), ancak unique kalması mantıklı
@@ -29,4 +29,6 @@ public class Customer {
     // Admin eklerken null olabilir, Müşteri kaydolurken doldurulur.
     @Column(nullable = true)
     private String password;
+
+    
 }

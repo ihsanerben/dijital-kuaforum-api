@@ -2,6 +2,7 @@ package com.dijitalkuaforum.dijitalkuaforum_backend.controller;
 
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.CustomerLoginRequestDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.CustomerRegisterRequestDTO;
+import com.dijitalkuaforum.dijitalkuaforum_backend.exception.UnauthorizedException;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.Customer;
 import com.dijitalkuaforum.dijitalkuaforum_backend.repository.CustomerRepository;
 import com.dijitalkuaforum.dijitalkuaforum_backend.service.CustomerService;
@@ -30,6 +31,8 @@ public class CustomerAuthController {
         if (existingCustomerOpt.isPresent()) {
             // --- KULLANICI 1 SENARYOSU: ADMIN TARAFINDAN EKLENMİŞ KAYDI GÜNCELLE ---
             Customer customer = existingCustomerOpt.get();
+
+
 
             // Sadece şifresi olmayan veya şifresini güncellemek isteyenler için
             if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
@@ -74,18 +77,24 @@ public class CustomerAuthController {
     // --- 2. MÜŞTERİ GİRİŞ İŞLEMİ (/login) ---
     @PostMapping("/login")
     public ResponseEntity<?> loginCustomer(@RequestBody CustomerLoginRequestDTO loginRequest) {
-        // Telefon ve Şifre ile direkt veritabanında ara
-        Optional<Customer> customerOpt = customerRepository.findByPhoneNumberAndPassword(
-                loginRequest.getPhoneNumber(),
-                loginRequest.getPassword()
-        );
+
+        Optional<Customer> customerOpt = customerRepository.findByPhoneNumber(loginRequest.getPhoneNumber());
 
         if (customerOpt.isEmpty()) {
-            return new ResponseEntity<>("Telefon numarası veya şifre hatalı.", HttpStatus.UNAUTHORIZED);
+            // KULLANICI BULUNAMADI mesajı (Frontend'de kontrol edeceğiz)
+            throw new UnauthorizedException("Kullanıcı bulunamadı. Lütfen kayıt olun.");
         }
 
         Customer customer = customerOpt.get();
-        customer.setPassword(null); // Şifreyi döndürme
+
+        // Basit şifre kontrolü
+        if (!customer.getPassword().equals(loginRequest.getPassword())) {
+            // HATALI ŞİFRE mesajı (Frontend'de kontrol edeceğiz)
+            throw new UnauthorizedException("Hatalı şifre.");
+        }
+
+        // Başarılı giriş
+        customer.setPassword(null);
         return ResponseEntity.ok(customer);
     }
 }
