@@ -46,8 +46,6 @@ public class HizmetController {
             throw new UnauthorizedException();
         }
 
-
-
         Hizmet savedHizmet = hizmetServis.hizmetEkle(hizmet);
         return new ResponseEntity<>(savedHizmet, HttpStatus.CREATED);
     }

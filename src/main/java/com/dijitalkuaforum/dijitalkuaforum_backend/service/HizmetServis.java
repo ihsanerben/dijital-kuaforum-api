@@ -45,8 +45,15 @@ public class HizmetServis {
     }
 
     // 4. Hizmet güncelle (Admin)
+    // 4. Hizmet güncelle (Admin) - DUPLICATE KONTROLÜ DÜZELTİLDİ
     public Hizmet hizmetGuncelle(Long id, Hizmet hizmetDetaylari) {
         Hizmet hizmet = idIleHizmetGetir(id);
+
+        // KRİTİK KONTROL: Yeni isim, mevcut isimden farklıysa VE veritabanında zaten varsa hata fırlat.
+        // Eğer isim aynıysa, kontrolü atla.
+        if (!hizmet.getAd().equals(hizmetDetaylari.getAd()) && hizmetRepository.existsByAd(hizmetDetaylari.getAd())) {
+            throw new DuplicateValueException("usta hizmet isminda sikinti var. ");
+        }
 
         hizmet.setAd(hizmetDetaylari.getAd());
         hizmet.setSureDakika(hizmetDetaylari.getSureDakika());
