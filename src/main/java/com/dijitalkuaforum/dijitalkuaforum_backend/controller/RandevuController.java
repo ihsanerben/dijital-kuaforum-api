@@ -1,4 +1,4 @@
-// src/main/java/com/dijitalkuaforum/dijitalkuaforum_backend/controller/RandevuController.java
+// src/main/java/.../controller/RandevuController.java (GÜNCELLENMİŞ)
 
 package com.dijitalkuaforum.dijitalkuaforum_backend.controller;
 
@@ -16,8 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -27,9 +27,9 @@ public class RandevuController {
 
     private final RandevuServis randevuServis;
     private final AuthService authService;
-    private final CustomerService customerService; // Customer nesnesini bulmak için
+    private final CustomerService customerService;
 
-    // Admin Kontrol Mekanizması (CustomerController'dan aldığınız benzer yapı)
+    // Admin Kontrol Mekanizması (Aynı Kalır)
     private Optional<Barber> checkAuthentication(String username, String password) {
         if (username == null || password == null) {
             return Optional.empty();
@@ -40,32 +40,36 @@ public class RandevuController {
         return authService.login(loginRequest);
     }
 
+    // --- YENİ: MÜŞTERİ DETAY İSTATİSTİĞİ (Aynı Kalır) ---
+    @GetMapping("/admin/musteriGecmis/{customerId}")
+    public ResponseEntity<List<Randevu>> getMusteriGecmisRandevulari(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @PathVariable Long customerId) {
 
-    // --- TAKVİM GÖRÜNÜMÜ VE KONTROLÜ (TEK VE TEMİZ METOT) ---
-    // Bu metot /api/randevular/takvim rotasını yönetir.
-    // GET /api/randevular/takvim?tarih=YYYY-MM-DD&barberId=X
-    @GetMapping("/takvim")
-    public ResponseEntity<List<Randevu>> getRandevularByDate(
-            @RequestParam("tarih") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tarih, // Tarih zorunlu
-            @RequestParam(required = false) Long barberId // Kuaför ID'si isteğe bağlı
-    ) {
-        // RandevuServis'ten o gün/hafta için onaylanmış/beklemedeki randevuları çek
-        // RandevuServis'te bu metodu oluşturmamız gerekecek.
-        List<Randevu> randevular = randevuServis.getRandevularByDate(tarih, barberId);
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
 
+        List<Randevu> randevular = randevuServis.musteriGecmisRandevulariniGetir(customerId);
         return ResponseEntity.ok(randevular);
     }
 
 
-    // --- 1. MÜŞTERİ İŞLEMLERİ ---
+    // --- TAKVİM GÖRÜNÜMÜ VE KONTROLÜ (Aynı Kalır) ---
+    @GetMapping("/takvim")
+    public ResponseEntity<List<Randevu>> getRandevularByDate(
+            @RequestParam("tarih") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate tarih,
+            @RequestParam(required = false) Long barberId
+    ) {
+        List<Randevu> randevular = randevuServis.getRandevularByDate(tarih, barberId);
+        return ResponseEntity.ok(randevular);
+    }
 
-    // Yeni Randevu Oluşturma (Müşteri)
-    // POST /api/randevular/olustur
+
+    // --- 1. MÜŞTERİ İŞLEMLERİ (Aynı Kalır) ---
     @PostMapping("/olustur")
     public ResponseEntity<Randevu> randevuOlustur(@RequestBody RandevuTalepDTO talepDTO) {
-
-        // ÖNEMLİ NOT: Gerçek bir sistemde bu customerId, JWT token veya Session bilgisinden alınmalıdır.
-        // Şimdilik Servis katmanında kullanılmak üzere DTO'dan alıyoruz.
         Customer customer = customerService.idIleMusteriGetir(talepDTO.getCustomerId());
 
         Randevu yeniRandevu = randevuServis.randevuOlustur(
@@ -78,10 +82,45 @@ public class RandevuController {
     }
 
 
-    // --- 3. ADMİN İŞLEMLERİ (Admin yetkilendirmesi gereklidir) ---
+    // --- YENİ: ADMİN HIZLI RANDEVU OLUŞTURMA (Aşama 4.2) ---
+    // POST /api/randevular/admin/olustur
+    @PostMapping("/admin/olustur")
+    public ResponseEntity<Randevu> createAdminRandevu(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @RequestBody RandevuTalepDTO talepDTO) {
 
-    // Randevunun Durumunu Güncelleme (ONAYLANDI/REDDEDİLDİ)
-    // PUT /api/randevular/admin/guncelle/1
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
+
+        Customer customer = customerService.idIleMusteriGetir(talepDTO.getCustomerId());
+
+        Randevu yeniRandevu = randevuServis.randevuOlusturAdmin(
+                customer,
+                talepDTO.getStartTime(),
+                talepDTO.getHizmetIdleri());
+
+        return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
+    }
+
+
+    // --- YENİ: İSTATİSTİK RAPORU ENDPOINT'İ (Aşama 4.3) ---
+    // GET /api/randevular/admin/istatistik
+    @GetMapping("/admin/istatistik")
+    public ResponseEntity<Map<String, Object>> getIstatistikRaporu(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password) {
+
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
+
+        Map<String, Object> rapor = randevuServis.getIstatistikRaporu();
+        return ResponseEntity.ok(rapor);
+    }
+
+    // --- 3. ADMİN İŞLEMLERİ (Aynı Kalır) ---
     @PutMapping("/admin/guncelle/{id}")
     public ResponseEntity<Randevu> updateRandevuStatus(
             @RequestHeader("Username") String username,
@@ -89,7 +128,6 @@ public class RandevuController {
             @PathVariable Long id,
             @RequestParam String yeniDurum)
     {
-        // Yetkilendirme Kontrolü
         if (checkAuthentication(username, password).isEmpty()) {
             throw new UnauthorizedException();
         }
@@ -98,17 +136,14 @@ public class RandevuController {
         return ResponseEntity.ok(guncellenmisRandevu);
     }
 
-    // Tüm Randevuları Getirme (Admin Paneli İçin Detaylı Liste)
-    // GET /api/randevular/admin/hepsi
     @GetMapping("/admin/hepsi")
     public ResponseEntity<List<Randevu>> getAllRandevularAdmin(
             @RequestHeader("Username") String username,
             @RequestHeader("Password") String password) {
 
-        // Yetkilendirme (AuthService'e ihtiyaç duyar, şimdilik atlanmıştır)
-        // if (authService.checkAdmin(username, password).isEmpty()) {
-        //     throw new UnauthorizedException();
-        // }
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
 
         List<Randevu> randevular = randevuServis.tumRandevulariGetir();
         return ResponseEntity.ok(randevular);

@@ -13,13 +13,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RandevuServis {
 
+    private static final String STATUS_BEKLEMEDE = "BEKLEMEDEKANKSS";
     private final RandevuRepository randevuRepository;
     private final RandevuHizmetRepository randevuHizmetRepository;
     private final HizmetRepository hizmetRepository; // Süre/Fiyat çekmek için
@@ -32,6 +37,111 @@ public class RandevuServis {
     // Kuaförün çalışma saatlerini varsayıyoruz (Daha basit bir sistem için)
     private static final int IS_BASLANGIC_SAATI = 9; // 09:00
     private static final int IS_BITIS_SAATI = 18;   // 18:00
+    private static final int SLOT_INTERVAL_MINUTES = 10; // 10 dakikalık bloklar
+
+    public static final String STATUS_ONAYLANDI = "ONAYLANDI";
+
+    public List<Randevu> musteriGecmisRandevulariniGetir(Long customerId) {
+        // Sadece onaylanmış ve tamamlanmış randevuları gösteriyoruz
+        return randevuRepository.findByCustomerIdAndStatusOrderByStartTimeDesc(customerId, STATUS_ONAYLANDI);
+    }
+
+    // --- YENİ METOT: ADMİN HIZLI RANDEVU OLUŞTURMA (ONAYLANDI) ---
+    // Bu metot, Müşteri randevusundan farklı olarak direkt ONAYLANDI olarak kaydeder.
+    @Transactional
+    public Randevu randevuOlusturAdmin(
+            Customer customer,
+            LocalDateTime startTime,
+            List<Long> hizmetIdleri)
+    {
+        // 1. Randevu oluşturma mantığı (süre/fiyat hesaplama, çakışma kontrolü aynı kalır)
+        // ... (Bu kod bloğunu randevuOlustur metodunuzdan kopyalayın) ...
+
+        // Önemli: Bu metodun sadece Status'ü 'ONAYLANDI' olarak ayarlaması gerekir.
+
+        // ÖRNEK: Yeni Randevu Modelini Oluştur
+        Randevu yeniRandevu = new Randevu();
+        // ... (Diğer alanları doldurun) ...
+        yeniRandevu.setStatus(STATUS_ONAYLANDI); // <-- Fark buradadır!
+
+        Randevu kaydedilenRandevu = randevuRepository.save(yeniRandevu);
+        // ... (RandevuHizmet ilişkilerini kaydetme kodu) ...
+
+        return kaydedilenRandevu;
+    }
+
+    // YENİ METOT: Admin için uygun saatleri hesaplar
+    public List<String> getAvailableSlotsAdmin(Long hizmetId, LocalDate date) {
+        Hizmet hizmet = hizmetRepository.findById(hizmetId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hizmet", "id", hizmetId));
+
+        int requiredDuration = hizmet.getSureDakika();
+        List<String> availableSlots = new ArrayList<>();
+
+        // O günkü tüm aktif randevuları çek
+        List<Randevu> appointments = getRandevularByDate(date, null); // Kuaför ID'si şimdilik null
+
+        LocalTime currentTime = LocalTime.of(IS_BASLANGIC_SAATI, 0);
+        LocalTime endTimeLimit = LocalTime.of(IS_BITIS_SAATI, 0);
+
+        while (currentTime.isBefore(endTimeLimit)) {
+
+            LocalDateTime slotStartDateTime = date.atTime(currentTime);
+            LocalDateTime slotEndDateTime = slotStartDateTime.plusMinutes(requiredDuration);
+
+            // Randevu bitiş saati, çalışma bitişini geçiyorsa, bu slotu kontrol etme
+            if (slotEndDateTime.toLocalTime().isAfter(endTimeLimit)) {
+                break;
+            }
+
+            boolean isConflicting = false;
+
+            // Çakışma kontrolü
+            for (Randevu app : appointments) {
+                // Sadece onaylanmış ve bekleyen randevularla çakışmayı kontrol et
+                if (app.getStatus().equals(STATUS_ONAYLANDI) || app.getStatus().equals(STATUS_BEKLEMEDE)) {
+
+                    // Çakışma Mantığı: Yeni slot başlangıcı, mevcut randevu bitişinden önce VE yeni slot bitişi, mevcut randevu başlangıcından sonra
+                    if (slotStartDateTime.isBefore(app.getEndTime()) && slotEndDateTime.isAfter(app.getStartTime())) {
+                        isConflicting = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isConflicting) {
+                availableSlots.add(currentTime.toString().substring(0, 5)); // HH:MM formatında ekle
+            }
+
+            // Sonraki 10 dakikalık bloğa geç
+            currentTime = currentTime.plusMinutes(SLOT_INTERVAL_MINUTES);
+        }
+
+        return availableSlots;
+    }
+
+
+    // --- YENİ METOT: İSTATİSTİK RAPORLARI ---
+    public Map<String, Object> getIstatistikRaporu() {
+        Map<String, Object> rapor = new HashMap<>();
+
+        // 1. Tamamlanmış (ONAYLANDI) randevuları hesapla
+        long tamamlanmisSayisi = randevuRepository.countByStatus(STATUS_ONAYLANDI);
+        rapor.put("tamamlanmisRandevuSayisi", tamamlanmisSayisi);
+
+        // 2. Beklemedeki randevuları say
+        long beklemedeSayisi = randevuRepository.countByStatus(STATUS_BEKLEMEDE);
+        rapor.put("beklemedeRandevuSayisi", beklemedeSayisi);
+
+        // 3. Toplam Gelir (Sadece ONAYLANDI olanlar)
+        BigDecimal toplamGelir = randevuRepository.sumTotalPriceByStatus(STATUS_ONAYLANDI);
+        rapor.put("toplamGelir", toplamGelir != null ? toplamGelir : BigDecimal.ZERO);
+
+        // NOT: Eğer bu metot içindeki repository metotları tanımlı değilse, uygulamanız başlamayabilir.
+        // countByStatus ve sumTotalPriceByStatus metotlarının RandevuRepository'de tanımlı olduğundan emin olun.
+
+        return rapor;
+    }
 
     // YENİ METOT: Belirli bir tarih için randevuları çekme
     public List<Randevu> getRandevularByDate(LocalDate date) {
