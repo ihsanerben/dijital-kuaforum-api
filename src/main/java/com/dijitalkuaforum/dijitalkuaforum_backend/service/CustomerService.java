@@ -69,4 +69,8 @@ public class CustomerService {
     public boolean validateEmailIsUnique(String email) {
         return customerRepository.existsByEmail(email);
     }
+
+    public List<Customer> searchByFullName(String query) {
+        return customerRepository.findByFullName(query);
+    }
 }

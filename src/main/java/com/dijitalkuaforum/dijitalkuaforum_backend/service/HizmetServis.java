@@ -33,7 +33,6 @@ public class HizmetServis {
         return hizmetRepository.save(hizmet);
     }
 
-    // 2. Tüm hizmetleri listele (Müşteri ve Admin)
     public List<Hizmet> tumHizmetleriGetir() {
         return hizmetRepository.findAll();
     }

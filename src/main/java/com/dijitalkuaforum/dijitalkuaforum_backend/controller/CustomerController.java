@@ -36,6 +36,20 @@ public class CustomerController {
         return authService.login(loginRequest);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Customer>> searchCustomers(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @RequestParam("fullName") String query) {
+
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
+
+        List<Customer> customers = customerService.searchByFullName(query);
+        return ResponseEntity.ok(customers);
+    }
+
     // --- 1. CREATE (Oluşturma) ---
     @PostMapping("/createCustomer")
     public ResponseEntity<?> createCustomer(@RequestBody SecuredCustomerRequestDTO request) {
