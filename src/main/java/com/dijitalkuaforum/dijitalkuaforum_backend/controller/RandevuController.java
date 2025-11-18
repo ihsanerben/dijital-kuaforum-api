@@ -67,42 +67,7 @@ public class RandevuController {
     }
 
 
-    // --- 1. MÜŞTERİ İŞLEMLERİ (Aynı Kalır) ---
-    @PostMapping("/olustur")
-    public ResponseEntity<Randevu> randevuOlustur(@RequestBody RandevuTalepDTO talepDTO) {
-        Customer customer = customerService.idIleMusteriGetir(talepDTO.getCustomerId());
 
-        Randevu yeniRandevu = randevuServis.randevuOlustur(
-                customer,
-                talepDTO.getStartTime(),
-                talepDTO.getHizmetIdleri()
-        );
-
-        return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
-    }
-
-
-    // --- YENİ: ADMİN HIZLI RANDEVU OLUŞTURMA (Aşama 4.2) ---
-    // POST /api/randevular/admin/olustur
-    @PostMapping("/admin/olustur")
-    public ResponseEntity<Randevu> createAdminRandevu(
-            @RequestHeader("Username") String username,
-            @RequestHeader("Password") String password,
-            @RequestBody RandevuTalepDTO talepDTO) {
-
-        if (checkAuthentication(username, password).isEmpty()) {
-            throw new UnauthorizedException();
-        }
-
-        Customer customer = customerService.idIleMusteriGetir(talepDTO.getCustomerId());
-
-        Randevu yeniRandevu = randevuServis.randevuOlusturAdmin(
-                customer,
-                talepDTO.getStartTime(),
-                talepDTO.getHizmetIdleri());
-
-        return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
-    }
 
 
     // --- YENİ: İSTATİSTİK RAPORU ENDPOINT'İ (Aşama 4.3) ---
@@ -147,5 +112,65 @@ public class RandevuController {
 
         List<Randevu> randevular = randevuServis.tumRandevulariGetir();
         return ResponseEntity.ok(randevular);
+    }
+
+
+
+    // --- YENİ: MÜSAİT SLOTLARI GETİRME ENDPOINT'İ (Admin) ---
+    // GET /api/randevular/admin/availableSlots?serviceId=...&date=...
+    @GetMapping("/admin/availableSlots")
+    public ResponseEntity<List<String>> getAvailableSlots(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @RequestParam("serviceId") Long hizmetId,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
+
+        List<String> slots = randevuServis.getAvailableSlotsAdmin(hizmetId, date);
+        return ResponseEntity.ok(slots);
+    }
+
+
+    @PostMapping("/admin/create")
+    public ResponseEntity<Randevu> createAdminRandevu(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @RequestBody RandevuTalepDTO talepDTO) {
+
+        if (checkAuthentication(username, password).isEmpty()) {
+            throw new UnauthorizedException();
+        }
+
+        Customer customer = customerService.idIleMusteriGetir(talepDTO.getCustomerId());
+
+        Randevu yeniRandevu = randevuServis.randevuOlustur(
+                customer,
+                talepDTO.getStartTime(),
+                talepDTO.getHizmetIdleri());
+
+        return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
+    }
+
+    // --- 1. MÜŞTERİ İŞLEMLERİ ---
+
+    // Yeni Randevu Oluşturma (Müşteri)
+    // POST /api/randevular/olustur
+    @PostMapping("/olustur")
+    public ResponseEntity<Randevu> randevuOlustur(@RequestBody RandevuTalepDTO talepDTO) {
+
+        // ÖNEMLİ NOT: Gerçek bir sistemde bu customerId, JWT token veya Session bilgisinden alınmalıdır.
+        // Şimdilik Servis katmanında kullanılmak üzere DTO'dan alıyoruz.
+        Customer customer = customerService.idIleMusteriGetir(talepDTO.getCustomerId());
+
+        Randevu yeniRandevu = randevuServis.randevuOlustur(
+                customer,
+                talepDTO.getStartTime(),
+                talepDTO.getHizmetIdleri()
+        );
+
+        return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
     }
 }

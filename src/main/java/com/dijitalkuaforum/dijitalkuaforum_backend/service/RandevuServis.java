@@ -47,28 +47,6 @@ public class RandevuServis {
     }
 
     // --- YENİ METOT: ADMİN HIZLI RANDEVU OLUŞTURMA (ONAYLANDI) ---
-    // Bu metot, Müşteri randevusundan farklı olarak direkt ONAYLANDI olarak kaydeder.
-    @Transactional
-    public Randevu randevuOlusturAdmin(
-            Customer customer,
-            LocalDateTime startTime,
-            List<Long> hizmetIdleri)
-    {
-        // 1. Randevu oluşturma mantığı (süre/fiyat hesaplama, çakışma kontrolü aynı kalır)
-        // ... (Bu kod bloğunu randevuOlustur metodunuzdan kopyalayın) ...
-
-        // Önemli: Bu metodun sadece Status'ü 'ONAYLANDI' olarak ayarlaması gerekir.
-
-        // ÖRNEK: Yeni Randevu Modelini Oluştur
-        Randevu yeniRandevu = new Randevu();
-        // ... (Diğer alanları doldurun) ...
-        yeniRandevu.setStatus(STATUS_ONAYLANDI); // <-- Fark buradadır!
-
-        Randevu kaydedilenRandevu = randevuRepository.save(yeniRandevu);
-        // ... (RandevuHizmet ilişkilerini kaydetme kodu) ...
-
-        return kaydedilenRandevu;
-    }
 
     // YENİ METOT: Admin için uygun saatleri hesaplar
     public List<String> getAvailableSlotsAdmin(Long hizmetId, LocalDate date) {

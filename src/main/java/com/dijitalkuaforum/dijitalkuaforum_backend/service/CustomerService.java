@@ -71,6 +71,7 @@ public class CustomerService {
     }
 
     public List<Customer> searchByFullName(String query) {
-        return customerRepository.findByFullName(query);
+        // Yeni metodu çağırın
+        return customerRepository.findByFullNameContainingIgnoreCase(query);
     }
 }

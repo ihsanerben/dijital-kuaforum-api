@@ -47,4 +47,5 @@ public interface RandevuRepository extends JpaRepository<Randevu, Long> {
 
     // 6. Müşteri Detayları: Müşteri ID'sine ve Statüye göre randevuları getir
     List<Randevu> findByCustomerIdAndStatusOrderByStartTimeDesc(Long customerId, String status);
+
 }
