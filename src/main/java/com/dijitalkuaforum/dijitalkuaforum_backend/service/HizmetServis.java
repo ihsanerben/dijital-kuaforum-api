@@ -66,4 +66,5 @@ public class HizmetServis {
         Hizmet hizmet = idIleHizmetGetir(id);
         hizmetRepository.delete(hizmet);
     }
+
 }

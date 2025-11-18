@@ -17,5 +17,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     // YENİ METOT: Giriş yapacak müşteriyi telefon ve şifre ile bulma (Basit Auth için)
     Optional<Customer> findByPhoneNumberAndPassword(String phoneNumber, String password);
 
-    List<Customer> findByFullName(String fullName);
+    List<Customer> findByFullNameContainingIgnoreCase(String query);
 }
