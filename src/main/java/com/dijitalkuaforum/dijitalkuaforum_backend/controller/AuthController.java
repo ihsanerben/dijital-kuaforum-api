@@ -26,7 +26,7 @@ public class AuthController {
         // Validation (boş kontrolü)
         if (loginRequest.getUsername() == null || loginRequest.getPassword() == null ||
                 loginRequest.getUsername().trim().isEmpty() || loginRequest.getPassword().trim().isEmpty()) {
-            return new ResponseEntity<>("Kullanıcı adı ve şifre boş bırakılamaz.", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Kullanıcı adı veya şifre boş bırakılamaz.", HttpStatus.BAD_REQUEST);
         }
 
         Optional<Barber> optionalBarber = authService.login(loginRequest);
