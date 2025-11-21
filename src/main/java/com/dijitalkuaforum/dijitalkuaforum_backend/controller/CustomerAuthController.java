@@ -19,7 +19,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CustomerAuthController {
 
-    private final CustomerRepository customerRepository;
     private final CustomerService customerService; // E-posta tekilliği kontrolü için
 
     // --- 1. MÜŞTERİ KAYIT / GÜNCELLEME İŞLEMİ (/register) ---
@@ -27,7 +26,7 @@ public class CustomerAuthController {
     public ResponseEntity<?> registerOrUpdateCustomer(@RequestBody CustomerRegisterRequestDTO request) {
 
         // 1. Telefon Numarası Kontrolü (Ana Anahtar)
-        Optional<Customer> existingCustomerOpt = customerRepository.findByPhoneNumber(request.getPhoneNumber());
+        Optional<Customer> existingCustomerOpt = customerService.findByPhoneNumber(request.getPhoneNumber());
 
         if (existingCustomerOpt.isPresent()) {
             // --- KULLANICI 1 SENARYOSU: ADMIN TARAFINDAN EKLENMİŞ KAYDI GÜNCELLE ---
@@ -52,7 +51,7 @@ public class CustomerAuthController {
             customer.setEmail(request.getEmail());
             customer.setPassword(request.getPassword()); // Şifre atanıyor/güncelleniyor.
 
-            Customer updatedCustomer = customerRepository.save(customer);
+            Customer updatedCustomer = customerService.save(customer);
             updatedCustomer.setPassword(null); // Güvenlik
             return new ResponseEntity<>(updatedCustomer, HttpStatus.OK);
 
@@ -68,7 +67,7 @@ public class CustomerAuthController {
             newCustomer.setEmail(request.getEmail());
             newCustomer.setPassword(request.getPassword());
 
-            Customer savedCustomer = customerRepository.save(newCustomer);
+            Customer savedCustomer = customerService.save(newCustomer);
             savedCustomer.setPassword(null);
             return new ResponseEntity<>(savedCustomer, HttpStatus.CREATED);
         }
@@ -78,7 +77,7 @@ public class CustomerAuthController {
     @PostMapping("/login")
     public ResponseEntity<?> loginCustomer(@RequestBody CustomerLoginRequestDTO loginRequest) {
 
-        Optional<Customer> customerOpt = customerRepository.findByPhoneNumber(loginRequest.getPhoneNumber());
+        Optional<Customer> customerOpt = customerService.findByPhoneNumber(loginRequest.getPhoneNumber());
 
         if (customerOpt.isEmpty()) {
             // KULLANICI BULUNAMADI mesajı (Frontend'de kontrol edeceğiz)
@@ -92,19 +91,12 @@ public class CustomerAuthController {
             if(customerOpt.get().getPassword() == null) {
                 throw new UserDidntRegister("Kullanicinin numarasi kuafor sahibi tarafindan kaydedildi ancak kullanici henuz register olmadi, sifre olusturmek icin register olunuz.");
             }
-            else if(customerOpt.get().getPassword() == null){
-                throw new UnauthorizedException("Hatalı şifre.");
-            }
-
 
             if (!customer.getPassword().equals(loginRequest.getPassword())) {
                 // HATALI ŞİFRE mesajı (Frontend'de kontrol edeceğiz)
                 throw new UnauthorizedException("Hatalı şifre.");
             }
         }
-
-
-
 
         // Başarılı giriş
         customer.setPassword(null);

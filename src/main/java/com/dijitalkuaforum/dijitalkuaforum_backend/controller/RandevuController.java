@@ -67,9 +67,6 @@ public class RandevuController {
     }
 
 
-
-
-
     // --- YENİ: İSTATİSTİK RAPORU ENDPOINT'İ (Aşama 4.3) ---
     // GET /api/randevular/admin/istatistik
     @GetMapping("/admin/istatistik")
@@ -82,6 +79,7 @@ public class RandevuController {
         }
 
         Map<String, Object> rapor = randevuServis.getIstatistikRaporu();
+
         return ResponseEntity.ok(rapor);
     }
 
