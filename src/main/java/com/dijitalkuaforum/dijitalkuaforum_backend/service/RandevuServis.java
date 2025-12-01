@@ -2,6 +2,8 @@
 
 package com.dijitalkuaforum.dijitalkuaforum_backend.service;
 
+import com.dijitalkuaforum.dijitalkuaforum_backend.dto.CustomerStatsDTO;
+import com.dijitalkuaforum.dijitalkuaforum_backend.dto.GeneralStatsDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.*;
 import com.dijitalkuaforum.dijitalkuaforum_backend.repository.*;
 import com.dijitalkuaforum.dijitalkuaforum_backend.exception.AppointmentConflictException;
@@ -29,6 +31,7 @@ public class RandevuServis {
     private final HizmetRepository hizmetRepository;
     private final BarberRepository barberRepository;
     private final EmailService emailService; // 📧 INJECT EMAIL SERVICE
+    private final CustomerRepository customerRepository;
 
     // Constants
     public static final String STATUS_ONAYLANDI = "ONAYLANDI";
@@ -239,4 +242,55 @@ public class RandevuServis {
         rapor.put("toplamGelir", toplamGelir != null ? toplamGelir : BigDecimal.ZERO);
         return rapor;
     }
+
+
+    // MÜŞTERİ ÖZEL İSTATİSTİKLERİ
+    public CustomerStatsDTO getCustomerStatistics(Long customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Müşteri", "id", customerId));
+
+        long totalAppt = randevuRepository.countByCustomerIdAndStatus(customerId, STATUS_ONAYLANDI);
+        BigDecimal totalSpent = randevuRepository.sumTotalPriceByCustomerAndStatus(customerId, STATUS_ONAYLANDI);
+
+        // Son ziyaret (Optional kontrolü)
+        LocalDateTime lastVisit = randevuRepository.findTopByCustomerIdAndStatusOrderByStartTimeDesc(customerId, STATUS_ONAYLANDI)
+                .map(Randevu::getStartTime)
+                .orElse(null);
+
+        // Favori hizmet (Native query null dönebilir)
+        String favService = randevuRepository.findFavoriteServiceByCustomer(customerId);
+
+        return new CustomerStatsDTO(
+                customerId,
+                customer.getFullName(),
+                totalAppt,
+                totalSpent != null ? totalSpent : BigDecimal.ZERO,
+                lastVisit,
+                favService != null ? favService : "-"
+        );
+    }
+
+    // GENEL DÜKKAN İSTATİSTİKLERİ
+    public GeneralStatsDTO getGeneralStatistics(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(23, 59, 59);
+
+        BigDecimal revenue = randevuRepository.calculateTotalRevenue(start, end);
+        long completed = randevuRepository.countByStatusAndDateRange(STATUS_ONAYLANDI, start, end);
+        long pending = randevuRepository.countByStatusAndDateRange(STATUS_BEKLEMEDE, start, end);
+        long totalCust = customerRepository.count();
+
+        // FIX: Call repository directly instead of missing helper method
+        List<ServiceDistributionDTO> distribution = randevuRepository.getServiceDistribution(STATUS_ONAYLANDI, start, end);
+
+        return new GeneralStatsDTO(
+                revenue != null ? revenue : BigDecimal.ZERO,
+                completed,
+                pending,
+                totalCust,
+                distribution
+        );
+    }
+
+
 }
