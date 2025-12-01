@@ -2,6 +2,8 @@
 
 package com.dijitalkuaforum.dijitalkuaforum_backend.controller;
 
+import com.dijitalkuaforum.dijitalkuaforum_backend.dto.CustomerStatsDTO;
+import com.dijitalkuaforum.dijitalkuaforum_backend.dto.GeneralStatsDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.LoginRequestDTO;
 import com.dijitalkuaforum.dijitalkuaforum_backend.model.*;
 import com.dijitalkuaforum.dijitalkuaforum_backend.dto.RandevuTalepDTO;
@@ -172,4 +174,32 @@ public class RandevuController {
 
         return new ResponseEntity<>(yeniRandevu, HttpStatus.CREATED);
     }
+
+
+    // 1. Müşteri İstatistik Endpoint'i
+    @GetMapping("/admin/stats/customer/{customerId}")
+    public ResponseEntity<CustomerStatsDTO> getCustomerStats(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @PathVariable Long customerId) {
+
+        if (checkAuthentication(username, password).isEmpty()) throw new UnauthorizedException();
+        return ResponseEntity.ok(randevuServis.getCustomerStatistics(customerId));
+    }
+
+    // 2. Genel İstatistik Endpoint'i
+    @GetMapping("/admin/stats/general")
+    public ResponseEntity<GeneralStatsDTO> getGeneralStats(
+            @RequestHeader("Username") String username,
+            @RequestHeader("Password") String password,
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        if (checkAuthentication(username, password).isEmpty()) throw new UnauthorizedException();
+        return ResponseEntity.ok(randevuServis.getGeneralStatistics(startDate, endDate));
+    }
+
+
+
+
 }
