@@ -28,7 +28,7 @@ public interface RandevuRepository extends JpaRepository<Randevu, Long> {
 
     // 3. Çakışan Randevuları Bulma (REDDEDİLEN hariç)
     @Query("SELECT r FROM Randevu r WHERE r.barber.id = :barberId " +
-            "AND r.status <> :excludedStatus " + // REDDEDİLEN randevuları sayma
+            "AND r.status IN ('ONAYLANDI', 'BEKLEMEDE') " +
             "AND (" +
             "  (r.startTime < :endTime AND r.endTime > :startTime)" + // Çakışma kontrolü
             ")")
